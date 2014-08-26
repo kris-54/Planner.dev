@@ -26,9 +26,11 @@
 			<label for="add_items">Add Items</label>
 			<input type="text" id="add_items" name="add_items" placeholder="Add Here">
 		</p>
+
 		<p>
         <input type="submit" value="Add">
-    </p>
+    	</p>
+    	
 	</form>
 </body>
 </html>

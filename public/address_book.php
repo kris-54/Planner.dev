@@ -45,7 +45,7 @@ if (!empty($_POST['name']) && !empty($_POST['address']) && !empty($_POST['city']
 
 <html>
 <head>
-	<title>Address Book</title>
+    <title>Address Book</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
     <style>
@@ -86,8 +86,8 @@ if (!empty($_POST['name']) && !empty($_POST['address']) && !empty($_POST['city']
 
 
 
-	<form method="POST" action="address_book.php">
-		 <p>
+    <form method="POST" action="address_book.php">
+         <p>
             <label for="name">NAME</label>
             <input type="text" id="name" name="name" placeholder="required"> 
         
@@ -117,12 +117,12 @@ if (!empty($_POST['name']) && !empty($_POST['address']) && !empty($_POST['city']
             <input type="phone" id="phone" name="phone" placeholder="Phone Here">
 
         <p>
-    		<button type="submit">Submit</button>
-		</P>
+            <button type="submit">Submit</button>
+        </P>
 
 
 
-	</form>
+    </form>
 
 
 </body>

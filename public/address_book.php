@@ -124,12 +124,6 @@ if (isset($_GET['remove']))
         height: 200px;
         margin-top: -300px;
         margin-left: 800px;
-        background-image: url(/img/posty.jpg);
-        background-repeat: no-repeat; 
-        background-size: cover;
-        opacity: 0.8px;
-        
-
     }
 
     .btn-default {

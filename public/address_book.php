@@ -4,46 +4,62 @@
 define('FILENAME', 'address_book.csv');
 
 
-function save_csv($address_book, $filename = FILENAME)
-{
-    $handle = fopen($filename, 'w');
-    //$fields is an array of the row of data entered//
-    foreach($address_book as $fields) 
-    {
-        fputcsv($handle, $fields);
-    }    
-    fclose($handle);
-    
-}
+class AddressDataStore {
 
-function read_file($filename = FILENAME)
-{
-    $address_book =[];
-    $handle = fopen($filename, 'r');
-    while(!feof($handle)) 
-    {   
-        $fields = fgetcsv($handle);
-        if(!empty($fields)) 
-        {
-            $address_book[] = $fields;
-        }
+    public $filename = 'address_book.csv';
+
+    public function __construct($filename)  {
+        $this->filename = $filename;
     }
-    fclose($handle);
-    return $address_book;
-    
+
+    public function write_csv($address_array)
+    {
+        
+        $handle = fopen($this->filename, 'w');
+            //$fields is an array of the row of data entered//
+        foreach($address_array as $fields) 
+        {
+            fputcsv($handle, $fields);
+        }    
+        fclose($handle);// Code to read file $this->filename
+
+
+    }
+
+    public function read_address_book()
+    {
+        $address_book =[];
+        $handle = fopen($this->filename, 'r');
+        while(!feof($handle)) 
+        {   
+            $fields = fgetcsv($handle);
+            if(!empty($fields)) 
+            {
+                $address_book[] = $fields;
+            }
+        }
+        fclose($handle);
+        return $address_book;
+        
+    }
 }
 
 
+//address object//
+$ads = new AddressDataStore(FILENAME);
+$address_book = $ads->read_address_book();
 
 
 
+// $ads = $AddressDataStore->write_csv($address_book);
 
-// $address_book =[];
-
-$address_book = read_file();
-
-if (!empty($_POST['name']) && !empty($_POST['address']) && !empty($_POST['city']) && !empty($_POST['state']) && !empty($_POST['zip'])) 
-{
+if (
+    !empty($_POST['name']) &&
+    !empty($_POST['address']) &&
+    !empty($_POST['city']) &&
+    !empty($_POST['state']) &&
+    !empty($_POST['zip'])
+) {
     $new_address = [
         $_POST['name'],
         $_POST['address'],
@@ -54,19 +70,41 @@ if (!empty($_POST['name']) && !empty($_POST['address']) && !empty($_POST['city']
     ];
 
     array_push($address_book, $new_address);
-    save_csv($address_book);
+    $ads->write_csv($address_book);
     
-} else 
-    {
+} else {
         foreach ($_POST  as $key => $value) 
         {
             if (empty($value)) 
             {
-                echo ($key) .  " is required ";
+                echo "<h5><strong>$key</h5></strong>" .  "<h5><strong> is required </strong></h5>";
             }
         }   
     }
 
+//upload file to address book
+//save uploaded list to address book//
+if (count($_FILES) > 0 && $_FILES['file1']['error'] === UPLOAD_ERR_OK) {
+    if($_FILES['file1']['type'] === 'text/csv') {
+
+        // Set the destination directory for uploads
+        $upload_dir = '/vagrant/sites/planner.dev/public/uploads/';
+        // Grab the filename from the uploaded file by using basename
+        $filename = basename($_FILES['file1']['name']);
+        // Create the saved filename using the file's original name and our upload directory
+        $saved_filename = $upload_dir . $filename;
+        // Move the file from the temp location to our uploads directory
+        move_uploaded_file($_FILES['file1']['tmp_name'], $saved_filename);
+
+        $uploadedList = new AddressDataStore($saved_filename);
+        $newStuff = $uploadedList->read_address_book();
+        $address_book = array_merge($address_book,$newStuff);
+        $ads->write_csv($address_book);
+    } else {
+        echo "<h1>ERROR must be a csv file ONLY</h1>";
+    }
+
+}            
 
 
 if (isset($_GET['remove'])) 
@@ -78,7 +116,7 @@ if (isset($_GET['remove']))
     // Numerically reindex values in array after removing item
     $address_book = array_values($address_book);
     // Save to file
-    save_csv($address_book);
+    $ads->write_csv($address_book);
 }
 
 
@@ -90,6 +128,7 @@ if (isset($_GET['remove']))
 <html>
 <head>
     <title>Address Book</title>
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
     <style type="text/css">
@@ -97,18 +136,34 @@ if (isset($_GET['remove']))
     a:link {
         color: black;
     }
-    h1 {
+    #mainheader {
         text-align: center;
     }
     body {
         background-image: url(/img/brown.jpg);
-        background-size: cover;
+        /*used the steps below to ensure image scales with browser*/
         background-repeat: no-repeat; 
+        background-position: center center;
+        background-attachment: fixed;
+        -webkit-background-size: cover;
+        -moz-background-size: cover;
+        -o-background-size: cover;
+        background-size: cover;
         text-decoration: bold;      
     }
     .table-bordered {
-        border-color: red;
-        border: 4px solid;
+        font-weight: bold;
+    }
+
+    #uploads {
+        width: 200px;
+        height: 130px;
+        margin-top: -300px;
+        margin-left: 800px;
+    }
+
+    .btn-default {
+        margin-left: 550px;
     }
     
     </style>
@@ -119,9 +174,9 @@ if (isset($_GET['remove']))
     <h2>$_POST</h2>
     <?php var_dump($_POST); ?> -->
 
-    <div id="header">
-    <h1>ADDRESS BOOK</h1>
-    </div>
+    
+    <h1 id="mainheader">ADDRESS BOOK</h1>
+    
 
     <table class="table table-bordered">
         <tr>
@@ -146,46 +201,60 @@ if (isset($_GET['remove']))
     </table>
 
 
-        
+    <form class="form-horizontal" role="form" method="POST" action="address_book.php">
+          <div class="form-group">
+            <label for="name" class="col-sm-2 control-label">Name</label>
+            <div class="col-sm-4">
+              <input type="text" class="form-control" id="name" name="name" placeholder="required">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="address" class="col-sm-2 control-label">Address</label>
+            <div class="col-sm-4">
+              <input type="text" class="form-control" id="address" name="address" placeholder="required">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="city" class="col-sm-2 control-label">City</label>
+            <div class="col-sm-4">
+              <input type="text" class="form-control" id="city" name="city" placeholder="required">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="state" class="col-sm-2 control-label">State</label>
+            <div class="col-sm-4">
+              <input type="text" class="form-control" id="state" name="state" placeholder="required">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="zip" class="col-sm-2 control-label">Zip</label>
+            <div class="col-sm-4">
+              <input type="text" class="form-control" id="zip" name="zip" placeholder="required">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="phone" class="col-sm-2 control-label">Phone</label>
+            <div class="col-sm-4">
+              <input type="text" class="form-control" id="phone" name="phone" placeholder="required">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-default">Submit</button>
+          
+    </form>  
 
-
-    <form method="POST" action="address_book.php">
-         <p>
-            <label for="name">NAME</label>
-            <input type="text" id="name" name="name" placeholder="required"> 
-        
-
-        
-            <label for="address">ADDRESS</label>
-            <input type="address" id="address" name="address" placeholder="required">
-        
-
-    
-            <label for="city">CITY</label>
-            <input type="city" id="city" name="city" placeholder="required">
-        
-
-    
-            <label for="state">STATE</label>
-            <input type="state" id="state" name="state" placeholder="required">
-        
-
-    
-            <label for="zip">ZIP</label>
-            <input type="zip" id="zip" name="zip" placeholder="Zip">
-        
-
-    
-            <label for="phone">PHONE</label>
-            <input type="phone" id="phone" name="phone" placeholder="Phone Here">
-
+    <div id="uploads">
+    <h1 >Upload File</h1>
+    <form method="POST" enctype="multipart/form-data" action="/address_book.php">
         <p>
-            <button type="submit">Submit</button>
-        </P>
-
-
-
+            <label for="file1">File to upload: </label>
+            <input type="file" id="file1" name="file1">
+        </p>
+        <p>
+            <input type="submit" value="Upload">
+        </p>
     </form>
+    </div>
+    
 
 
 </body>

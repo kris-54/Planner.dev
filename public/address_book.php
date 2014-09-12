@@ -1,12 +1,8 @@
 <?php
 
-
-define('FILENAME', 'address_book.csv');
-
-
 class AddressDataStore {
 
-    public $filename = 'address_book.csv';
+    public $filename = '';
 
     public function __construct($filename)  {
         $this->filename = $filename;
@@ -46,8 +42,14 @@ class AddressDataStore {
 
 
 //address object//
-$ads = new AddressDataStore(FILENAME);
+$ads = new AddressDataStore('address_book.csv');
+// var_dump($ads);
+// var_dump($ads->filename);
 $address_book = $ads->read_address_book();
+// var_dump($address_book);
+
+
+
 
 
 
@@ -69,7 +71,9 @@ if (
         $_POST['phone']
     ];
 
+    //new address is an array
     array_push($address_book, $new_address);
+    // var_dump($new_address);
     $ads->write_csv($address_book);
     
 } else {
@@ -97,7 +101,11 @@ if (count($_FILES) > 0 && $_FILES['file1']['error'] === UPLOAD_ERR_OK) {
         move_uploaded_file($_FILES['file1']['tmp_name'], $saved_filename);
 
         $uploadedList = new AddressDataStore($saved_filename);
+        // var_dump($uploadedList);
+        //uploaded list is the file...
         $newStuff = $uploadedList->read_address_book();
+        // var_dump($newStuff);
+        //new stuff is array of uploaded list
         $address_book = array_merge($address_book,$newStuff);
         $ads->write_csv($address_book);
     } else {

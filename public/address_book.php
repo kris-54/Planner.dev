@@ -11,37 +11,51 @@ $ads = new AddressDataStore('address_book.csv');
 $address_book = $ads->read_address_book();
 // var_dump($address_book);
 
-if (
-    !empty($_POST['name']) &&
-    !empty($_POST['address']) &&
-    !empty($_POST['city']) &&
-    !empty($_POST['state']) &&
-    !empty($_POST['zip'])
-) {
-    $new_address = [
-        $_POST['name'],
-        $_POST['address'],
-        $_POST['city'],
-        $_POST['state'],
-        $_POST['zip'],
-        $_POST['phone']
-    ];
 
-    //new address is an array
-    array_push($address_book, $new_address);
-    // var_dump($new_address);
-    $ads->write_csv($address_book);
-    
-} else {
-        foreach ($_POST  as $key => $value) 
-        {
-            if (empty($value)) 
-            {
-                echo "<h5><strong>$key</h5></strong>" .  "<h5><strong> is required </strong></h5>";
+
+
+if(!empty($_POST)) {
+    try {
+        if (
+            !empty($_POST['name']) && strlen($_POST['name']) <= 125 &&
+            !empty($_POST['address']) && strlen($_POST['address']) <=125 &&
+            !empty($_POST['city'])  && strlen($_POST['city']) <= 125 &&
+            !empty($_POST['state']) && strlen($_POST['state']) <= 125 &&
+            !empty($_POST['zip'])&& strlen($_POST['zip']) <= 125
+        ) {
+            $new_address = [
+                $_POST['name'],
+                $_POST['address'],
+                $_POST['city'],
+                $_POST['state'],
+                $_POST['zip'],
+                $_POST['phone']
+            ];
+
+            //new address is an array
+            array_push($address_book, $new_address);
+            // var_dump($new_address);
+            $ads->write_csv($address_book);
+            
+        } else {
+                foreach ($_POST  as $key => $value) 
+                {
+                    if (empty($value) || strlen($value) > 125) 
+                    {
+                        throw new Exception('can not be empty and/or max length is 125 characters!!!!');
+                    }
+                }   
             }
-        }   
-    }
+        } 
+        catch(Exception $e) {
+            $errorMessage = $e->getMessage();
+        }
+}
 
+
+if (isset($errorMessage)) {
+    echo "<h1>$errorMessage</h1>";
+}
 //upload file to address book
 //save uploaded list to address book//
 if (count($_FILES) > 0 && $_FILES['file1']['error'] === UPLOAD_ERR_OK) {
@@ -57,7 +71,6 @@ if (count($_FILES) > 0 && $_FILES['file1']['error'] === UPLOAD_ERR_OK) {
         move_uploaded_file($_FILES['file1']['tmp_name'], $saved_filename);
 
         $uploadedList = new AddressDataStore($saved_filename);
-        // var_dump($uploadedList);
         //uploaded list is the file...
         $newStuff = $uploadedList->read_address_book();
         // var_dump($newStuff);
@@ -101,7 +114,10 @@ if (isset($_GET['remove']))
         color: black;
     }
     #mainheader {
+        border: 3px solid;
         text-align: center;
+        margin: auto;
+        width: 300px;
     }
     body {
         background-image: url(/img/brown.jpg);
@@ -109,6 +125,9 @@ if (isset($_GET['remove']))
         background-repeat: no-repeat; 
         background-position: center center;
         background-attachment: fixed;
+
+
+        
         -webkit-background-size: cover;
         -moz-background-size: cover;
         -o-background-size: cover;
@@ -120,8 +139,9 @@ if (isset($_GET['remove']))
     }
 
     #uploads {
-        width: 200px;
-        height: 200px;
+        border: 2px solid;
+        width: 225px;
+        height: 180px;
         margin-top: -300px;
         margin-left: 800px;
     }

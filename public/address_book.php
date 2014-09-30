@@ -1,15 +1,38 @@
 <?php
 
 
-require_once('classes/address_data_store.php');
+// require_once('classes/address_data_store.php');
 
+// class InvalidInputException extends Exception {}
 
 //address object//
-$ads = new AddressDataStore('address_book.csv');
+// $ads = new AddressDataStore('address_book.csv');
 // var_dump($ads);
 // var_dump($ads->filename);
-$address_book = $ads->read_address_book();
+// $address_book = $ads->read();
 // var_dump($address_book);
+
+$dbc = new PDO('mysql:host=127.0.0.1;dbname=addresses', 'codeup', 'codeuprocks');
+
+// Tell PDO to throw exceptions on error
+$dbc->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+
+
+function getItems($dbc){
+    return $dbc->query("SELECT n.id, n.contact_name, n.contact_phone
+        AS full_name, a.address, a.city, a.state, a.zip 
+        FROM names n
+        JOIN names_address na
+            ON na.name_id = n.id
+        JOIN addresses a
+            ON a.id = na.address_id")->fetchAll(PDO::FETCH_ASSOC);
+
+}
+
+$address_book = getItems($dbc);
+
+
 
 
 
@@ -32,23 +55,20 @@ if(!empty($_POST)) {
                 $_POST['phone']
             ];
 
-            //new address is an array
-            array_push($address_book, $new_address);
-            // var_dump($new_address);
-            $ads->write_csv($address_book);
+            
             
         } else {
                 foreach ($_POST  as $key => $value) 
                 {
-                    if (empty($value) || strlen($value) > 125) 
-                    {
-                        throw new Exception('can not be empty and/or max length is 125 characters!!!!');
+                    if (empty($value) || strlen($value) > 125) {
+                        throw new InvalidInputException('<h2>can not be empty and/or max length is 125 characters!!!!</h2>');
                     }
                 }   
             }
         } 
-        catch(Exception $e) {
-            $errorMessage = $e->getMessage();
+        catch(InvalidInputException $e) {
+            echo "<h1>InvalidInputException: </h1>" . $e->getMessage() . PHP_EOL;
+
         }
 }
 
@@ -72,11 +92,11 @@ if (count($_FILES) > 0 && $_FILES['file1']['error'] === UPLOAD_ERR_OK) {
 
         $uploadedList = new AddressDataStore($saved_filename);
         //uploaded list is the file...
-        $newStuff = $uploadedList->read_address_book();
+        $newStuff = $uploadedList->read();
         // var_dump($newStuff);
         //new stuff is array of uploaded list
         $address_book = array_merge($address_book,$newStuff);
-        $ads->write_csv($address_book);
+        $ads->write($address_book);
     } else {
         echo "<h1>ERROR must be a csv file ONLY</h1>";
     }
@@ -95,10 +115,6 @@ if (isset($_GET['remove']))
     // Save to file
     $ads->write_csv($address_book);
 }
-
-
-
-
 
 ?>
 
@@ -124,10 +140,7 @@ if (isset($_GET['remove']))
         /*used the steps below to ensure image scales with browser*/
         background-repeat: no-repeat; 
         background-position: center center;
-        background-attachment: fixed;
-
-
-        
+        background-attachment: fixed;    
         -webkit-background-size: cover;
         -moz-background-size: cover;
         -o-background-size: cover;
@@ -164,6 +177,7 @@ if (isset($_GET['remove']))
 
     <table class="table table-bordered">
         <tr>
+            <th>ID</th>
             <th>Name</th>
             <th>Address</th>
             <th>City</th>
@@ -186,42 +200,48 @@ if (isset($_GET['remove']))
 
 
     <form class="form-horizontal" role="form" method="POST" action="address_book.php">
-          <div class="form-group">
+        <div class="form-group">
             <label for="name" class="col-sm-2 control-label">Name</label>
             <div class="col-sm-4">
-              <input type="text" class="form-control" id="name" name="name" placeholder="required">
+                <input type="text" class="form-control" id="name" name="name" placeholder="required" required>
             </div>
-          </div>
-          <div class="form-group">
+        </div>
+
+        <div class="form-group">
             <label for="address" class="col-sm-2 control-label">Address</label>
             <div class="col-sm-4">
-              <input type="text" class="form-control" id="address" name="address" placeholder="required">
+                <input type="text" class="form-control" id="address" name="address" placeholder="required" required>
             </div>
-          </div>
-          <div class="form-group">
+        </div>
+
+        <div class="form-group">
             <label for="city" class="col-sm-2 control-label">City</label>
             <div class="col-sm-4">
-              <input type="text" class="form-control" id="city" name="city" placeholder="required">
+                <input type="text" class="form-control" id="city" name="city" placeholder="required" required>
             </div>
-          </div>
-          <div class="form-group">
+        </div>
+
+        <div class="form-group">
             <label for="state" class="col-sm-2 control-label">State</label>
             <div class="col-sm-4">
-              <input type="text" class="form-control" id="state" name="state" placeholder="required">
+                <input type="text" class="form-control" id="state" name="state" placeholder="required" required>
             </div>
-          </div>
-          <div class="form-group">
+        </div>
+
+        <div class="form-group">
             <label for="zip" class="col-sm-2 control-label">Zip</label>
             <div class="col-sm-4">
-              <input type="text" class="form-control" id="zip" name="zip" placeholder="required">
+                <input type="text" class="form-control" id="zip" name="zip" placeholder="required" required>
             </div>
-          </div>
-          <div class="form-group">
+        </div>
+
+        <div class="form-group">
             <label for="phone" class="col-sm-2 control-label">Phone</label>
             <div class="col-sm-4">
-              <input type="text" class="form-control" id="phone" name="phone" placeholder="required">
+                <input type="text" class="form-control" id="phone" name="phone" placeholder="required" required>
             </div>
-          </div>
+        </div>
+        
           <button type="submit" class="btn btn-default">Submit</button>
           
     </form>  
